@@ -1,0 +1,201 @@
+{% extends 'base.html' %}
+
+{% block title %}Account Login - Mino SMS Panel{% endblock %}
+
+{% block content %}
+<!-- আইকনের জন্য FontAwesome সিডিএন লিংক -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<style>
+    /* পুরো পেজের ব্যাকগ্রাউন্ড হালকা বেগুনি টোন */
+    body {
+        background-color: #f3f0f7;
+        margin: 0;
+        padding: 0;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .login-wrapper {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 80vh;
+        padding: 20px;
+    }
+
+    .login-card {
+        background: #ffffff;
+        width: 100%;
+        max-width: 450px;
+        padding: 40px 30px;
+        border-radius: 16px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+        text-align: center;
+        box-sizing: border-box;
+    }
+
+    .notice-box {
+        font-size: 14px;
+        color: #333;
+        line-height: 1.6;
+        margin-bottom: 25px;
+        background-color: #fafafa;
+        padding: 15px;
+        border-radius: 8px;
+        border: 1px solid #eee;
+    }
+
+    .notice-box a {
+        color: #0056b3;
+        text-decoration: none;
+    }
+
+    /* লোগো ও টাইটেল স্টাইল */
+    .brand-logo {
+        font-size: 38px;
+        font-weight: 900;
+        color: #111;
+        letter-spacing: -1px;
+        margin-bottom: 5px;
+        text-transform: uppercase;
+    }
+
+    .brand-logo span {
+        display: block;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 4px;
+        margin-top: -5px;
+        color: #666;
+    }
+
+    .login-title {
+        font-size: 24px;
+        font-weight: 700;
+        color: #222;
+        margin-top: 20px;
+        margin-bottom: 30px;
+    }
+
+    /* গোল ইনপুট বক্স এবং আইকন সেটআপ */
+    .input-group {
+        position: relative;
+        margin-bottom: 20px;
+    }
+
+    .input-group i {
+        position: absolute;
+        left: 22px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #777;
+        font-size: 16px;
+    }
+
+    .input-group input {
+        width: 100%;
+        padding: 16px 16px 16px 55px;
+        background-color: #e9e9e9;
+        border: none;
+        border-radius: 50px; /* সম্পূর্ণ গোল কোণ */
+        font-size: 16px;
+        color: #333;
+        outline: none;
+        box-sizing: border-box;
+        transition: all 0.3s ease;
+    }
+
+    .input-group input::placeholder {
+        color: #888;
+    }
+
+    .input-group input:focus {
+        background-color: #e2e2e2;
+        box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+    }
+
+    /* সবুজ রঙের বড় লগইন বাটন */
+    .login-submit-btn {
+        width: 100%;
+        padding: 16px;
+        background-color: #4CAF50; /* স্মুথ সবুজ কালার */
+        color: white;
+        border: none;
+        border-radius: 50px; /* সম্পূর্ণ গোল কোণ */
+        font-size: 16px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        cursor: pointer;
+        margin-top: 15px;
+        transition: background-color 0.3s ease, transform 0.1s ease;
+    }
+
+    .login-submit-btn:hover {
+        background-color: #43A047;
+    }
+
+    .login-submit-btn:active {
+        transform: scale(0.99);
+    }
+
+    /* এরর মেসেজ */
+    .error-alert {
+        background-color: #ffebee;
+        color: #c62828;
+        padding: 12px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        font-size: 14px;
+        text-align: left;
+        border-left: 4px solid #e53935;
+    }
+</style>
+
+<div class="login-wrapper">
+    <div class="login-card">
+        
+        <!-- ইম্পর্ট্যান্ট নোটিশ সেকশন -->
+        <div class="notice-box">
+            📢 <strong>Important Notice :</strong><br>
+            All agents are requested to contact us via WhatsApp or Telegram for account activation and balance load.
+        </div>
+
+        <!-- ব্র্যান্ড লোগো -->
+        <div class="brand-logo">
+            EASY SMS
+            
+        </div>
+
+        <div class="login-title">Account Login</div>
+
+        <!-- কোনো ভুল হলে এরর মেসেজ এখানে দেখাবে -->
+        {% if error %}
+            <div class="error-alert">
+                <i class="fa-solid fa-circle-exclamation"></i> {{ error }}
+            </div>
+        {% endif %}
+
+        <!-- লগইন ফর্ম (শুধু ইউজারনেম আর পাসওয়ার্ড, কোনো যোগ করার ঝামেলা নেই) -->
+        <form action="{{ url_for('login') }}" method="POST">
+            
+            <!-- ইউজারনেম ইনপুট -->
+            <div class="input-group">
+                <i class="fa-solid fa-envelope"></i>
+                <input type="text" name="username" placeholder="Username" required autocomplete="off">
+            </div>
+            
+            <!-- পাসওয়ার্ড ইনপুট -->
+            <div class="input-group">
+                <i class="fa-solid fa-lock"></i>
+                <input type="password" name="password" placeholder="Password" required>
+            </div>
+            
+            <!-- সবুজ লগইন বাটন -->
+            <button type="submit" class="login-submit-btn">Login</button>
+            
+        </form>
+
+    </div>
+</div>
+{% endblock %}
