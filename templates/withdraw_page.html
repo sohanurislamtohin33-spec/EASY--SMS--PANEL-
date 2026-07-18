@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block title %}Withdraw Request{% endblock %}
+{% block content %}
+<div class="card">
+    <h3>💸 Withdraw Funds</h3>
+    <form action="/withdraw" method="POST">
+        <input type="number" step="0.01" name="amount" placeholder="Amount (BDT)" required>
+        <input type="text" name="bkash" placeholder="bKash Personal Number" required>
+        <button type="submit" style="background: #ea580c;">Submit Withdraw Request</button>
+    </form>
+</div>
+{% endblock %}
