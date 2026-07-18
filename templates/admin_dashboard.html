@@ -1,7 +1,44 @@
 {% extends "base.html" %}
+{% block title %}Admin Panel - EASY SMS PANEL{% endblock %}
 {% block content %}
 <div class="card" style="border-color: #eab308;">
-    <h2 style="color: #eab308;">Admin Control Panel</h2>
-    <p>ইউজার ম্যানেজমেন্ট ও সার্ভার এপিআই সেটিংস কনফিগার করুন।</p>
+    <h2 style="color: #eab308; margin-top: 0;"><i class="fa-solid fa-sliders"></i> অ্যাডমিন কন্ট্রোল প্যানেল</h2>
+    <p>১০০০ ইউজার ইঞ্জিনের লাইভ স্ট্যাটাস এবং ইউজার ম্যানেজমেন্ট এখান থেকে নিয়ন্ত্রণ করুন।</p>
+</div>
+
+<!-- স্ট্যাটাস কার্ডস -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 20px;">
+    <div class="card" style="margin-bottom: 0;">
+        <h4 style="color: #64748b; margin: 0;">মোট রেজিস্টার্ড ইউজার</h4>
+        <h2 style="color: #38bdf8; margin: 10px 0 0 0;">১,২৪৮ জন</h2>
+    </div>
+    <div class="card" style="margin-bottom: 0;">
+        <h4 style="color: #64748b; margin: 0;">আজকের ওটিপি রিকোয়েস্ট</h4>
+        <h2 style="color: #22c55e; margin: 10px 0 0 0;">৪,৫২০ টি</h2>
+    </div>
+    <div class="card" style="margin-bottom: 0;">
+        <h4 style="color: #64748b; margin: 0;">সার্ভার প্রসেস লোড (Render)</h4>
+        <h2 style="color: #eab308; margin: 10px 0 0 0;">স্মুথ (Gunicorn 4 Workers)</h2>
+    </div>
+</div>
+
+<!-- ইউজার ব্যালেন্স এডিট ফর্ম -->
+<div class="card">
+    <h3 style="color: #38bdf8; margin-top: 0;"><i class="fa-solid fa-user-pen"></i> ইউজারের ব্যালেন্স এড/রিসেট করুন</h3>
+    <form method="POST" action="/admin/panel">
+        <label>ইউজারনেম লিখুন</label>
+        <input type="text" name="target_username" placeholder="যেমন: user123" required>
+        
+        <label>টাকার পরিমাণ (BDT)</label>
+        <input type="number" name="amount" placeholder="যেমন: ৫০০" required>
+        
+        <label>অ্যাকশন সিলেক্ট করুন</label>
+        <select name="action_type">
+            <option value="add">ব্যালেন্স যোগ করুন (+)</option>
+            <option value="set">ব্যালেন্স নির্দিষ্ট করুন (=)</option>
+        </select>
+        
+        <button type="submit" style="background: #eab308; color: #08090c; margin-top: 15px;">আপডেট করুন</button>
+    </form>
 </div>
 {% endblock %}
