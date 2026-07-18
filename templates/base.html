@@ -4,61 +4,43 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}EASY SMS PANEL{% endblock %}</title>
-    <!-- গ্লোবাল CDN অপ্টিমাইজেশন (হাই ট্রাফিক লোড নেওয়ার জন্য দ্রুততম সার্ভার থেকে আইকন লোড) -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <style>
         body { font-family: 'Segoe UI', Roboto, Arial, sans-serif; background-color: #08090c; color: #cbd5e1; margin: 0; padding: 0; }
-        
-        /* নেভিগেশন বার */
         .navbar { background-color: #0f111a; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; position: relative; z-index: 1000; }
         .nav-left-box { display: flex; align-items: center; gap: 15px; }
         .brand { font-size: 18px; font-weight: bold; color: #38bdf8; text-shadow: 0 0 8px rgba(56, 189, 248, 0.2); }
-        
-        /* থ্রি বার / হ্যামবার্গার মেনু বাটন */
         .menu-toggle { font-size: 20px; cursor: pointer; color: #cbd5e1; padding: 5px; transition: color 0.2s; user-select: none; }
         .menu-toggle:hover { color: #38bdf8; }
-        
-        /* ব্যালেন্স বক্স স্টাইল */
         .nav-right-box { display: flex; align-items: center; gap: 15px; }
-        .user-balance-badge { background: linear-gradient(135deg, #1e293b, #0f172a); border: 1px solid #3b82f6; color: #38bdf8; padding: 6px 14px; border-radius: 20px; font-size: 14px; font-weight: bold; font-family: monospace; box-shadow: 0 0 10px rgba(59, 130, 246, 0.1); }
-        
-        /* সাইড নেভিগেশন ড্রয়ার (GPU Acceleration সহ স্লাইড অপ্টিমাইজেশন) */
-        .sidebar { position: fixed; top: 0; left: -280px; width: 280px; height: 100%; background-color: #0f111a; border-right: 1px solid #1e293b; z-index: 9999; transform: translate3d(0, 0, 0); transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: flex; flex-direction: column; }
+        .user-balance-badge { background: linear-gradient(135deg, #1e293b, #0f172a); border: 1px solid #3b82f6; color: #38bdf8; padding: 6px 14px; border-radius: 20px; font-size: 14px; font-weight: bold; font-family: monospace; }
+        .sidebar { position: fixed; top: 0; left: -280px; width: 280px; height: 100%; background-color: #0f111a; border-right: 1px solid #1e293b; z-index: 9999; transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: flex; flex-direction: column; }
         .sidebar.open { left: 0; }
-        
-        /* সাইডবার হেডার */
         .sidebar-header { padding: 20px; border-bottom: 1px solid #1e293b; display: flex; justify-content: space-between; align-items: center; }
         .sidebar-brand { font-size: 18px; font-weight: bold; color: #38bdf8; }
         .close-sidebar { font-size: 20px; cursor: pointer; color: #94a3b8; padding: 5px; }
         .close-sidebar:hover { color: #ef4444; }
-        
-        /* সাইডবার মেনু লিংকসমূহ */
-        .sidebar-menu { display: flex; flex-direction: column; padding: 15px 0; overflow-y: auto; flex-grow: 1; -webkit-overflow-scrolling: touch; }
-        .sidebar-menu a { display: flex; align-items: center; gap: 12px; padding: 14px 25px; color: #cbd5e1; text-decoration: none; font-size: 15px; border-left: 3px solid transparent; transition: background-color 0.2s, color 0.2s; }
+        .sidebar-menu { display: flex; flex-direction: column; padding: 15px 0; overflow-y: auto; flex-grow: 1; }
+        .sidebar-menu a { display: flex; align-items: center; gap: 12px; padding: 14px 25px; color: #cbd5e1; text-decoration: none; font-size: 15px; border-left: 3px solid transparent; transition: all 0.2s; }
         .sidebar-menu a i { width: 20px; text-align: center; font-size: 16px; color: #64748b; }
         .sidebar-menu a:hover { background-color: #1e293b; color: #38bdf8; border-left-color: #38bdf8; }
-        .sidebar-menu a:hover i { color: #38bdf8; }
-        
         .sidebar-menu a.active { background-color: #1e293b; color: #38bdf8; border-left-color: #38bdf8; }
-        .sidebar-menu a.active i { color: #38bdf8; }
-        
-        /* ডার্ক ব্যাকড্রপ ওভারলে */
         .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); z-index: 9998; backdrop-filter: blur(2px); }
         .overlay.show { display: block; }
-        
-        /* মূল কন্টেন্ট এরিয়া (১০০০ জনের জন্য রেসপন্সিভ স্ক্রিন লেআউট) */
         .main-container { max-width: 1200px; margin: 0 auto; padding: 20px; box-sizing: border-box; }
+        .card { background-color: #0f111a; border: 1px solid #1e293b; padding: 25px; border-radius: 12px; margin-bottom: 20px; }
+        input, select, button { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #1e293b; background: #08090c; color: #white; font-size: 15px; box-sizing: border-box; color-scheme: dark; }
+        button { background: #38bdf8; color: #08090c; font-weight: bold; cursor: pointer; border: none; }
+        button:hover { background: #0284c7; }
     </style>
 </head>
 <body>
 
-    <!-- নেভিগেশন বার -->
     <div class="navbar">
         <div class="nav-left-box">
             <div class="menu-toggle" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></div>
             <div class="brand">EASY SMS PANEL</div>
         </div>
-        
         <div class="nav-right-box">
             {% if session.get('logged_in') %}
                 <div class="user-balance-badge" id="navUserBalance">৳{{ "%.2f"|format(global_balance) }}</div>
@@ -66,47 +48,37 @@
         </div>
     </div>
 
-    <!-- ব্যাকড্রপ ওভারলে -->
     <div class="overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
-    <!-- সাইডবার মেনু ড্রয়ার -->
     <div class="sidebar" id="sidebarMenu">
         <div class="sidebar-header">
             <div class="sidebar-brand">EASY SMS PANEL</div>
             <div class="close-sidebar" onclick="toggleSidebar()"><i class="fa-solid fa-xmark"></i></div>
         </div>
-        
         <div class="sidebar-menu">
             {% if session.get('logged_in') %}
-                <a href="/"><i class="fa-solid fa-gauge"></i> Dashboard</a>
+                <a href="/dashboard"><i class="fa-solid fa-gauge"></i> Dashboard</a>
                 <a href="/get_number_page"><i class="fa-solid fa-mobile-screen"></i> Get Number</a>
                 <a href="/console_page"><i class="fa-solid fa-terminal"></i> Live Console</a>
-                <a href="/withdraw_page" style="color: #22c55e;"><i class="fa-solid fa-wallet" style="color: #22c55e;"></i> Withdraw 💸</a>
-                
+                <a href="/withdraw_page" style="color: #22c55e;"><i class="fa-solid fa-wallet"></i> Withdraw 💸</a>
                 {% if session.get('is_admin') %}
-                    <a href="/admin/panel" style="color: #eab308; font-weight: bold;"><i class="fa-solid fa-sliders" style="color: #eab308;"></i> Admin Panel ⚙️</a>
+                    <a href="/admin/panel" style="color: #eab308; font-weight: bold;"><i class="fa-solid fa-sliders"></i> Admin Panel ⚙️</a>
                 {% endif %}
-                
-                <a href="/logout" style="color: #ff4757;"><i class="fa-solid fa-right-from-bracket" style="color: #ff4757;"></i> Logout</a>
+                <a href="/logout" style="color: #ff4757;"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
             {% else %}
                 <a href="/login"><i class="fa-solid fa-right-to-bracket"></i> Login</a>
             {% endif %}
         </div>
     </div>
 
-    <!-- মূল কন্টেন্ট এরিয়া -->
     <div class="main-container">
-        {% block content %}
-        {% endblock %}
+        {% block content %}{% endblock %}
     </div>
 
-    <!-- সাইডবার কন্ট্রোল করার অপ্টিমাইজড স্ক্রিপ্ট -->
     <script>
         function toggleSidebar() {
-            const sidebar = document.getElementById("sidebarMenu");
-            const overlay = document.getElementById("sidebarOverlay");
-            sidebar.classList.toggle("open");
-            overlay.classList.toggle("show");
+            document.getElementById("sidebarMenu").classList.toggle("open");
+            document.getElementById("sidebarOverlay").classList.toggle("show");
         }
     </script>
 </body>
