@@ -9,7 +9,7 @@ import os
 
 app = Flask(__name__)
 
-# সেশন সিকিউরিটি কি (Render এনভায়রনমেন্ট ভ্যারিয়েবল থেকে নেওয়ার চেষ্টা করবে, না থাকলে ডিফল্ট)
+# সেশন সিকিউরিটি কি (Render এনভায়রনমেন্ট ভ্যারিয়েবল থেকে নেওয়ার চেষ্টা করবে, না থাকলে ডিফল্ট)
 app.secret_key = os.getenv("SECRET_KEY", "mino_sms_panel_secure_static_key_2026")
 
 # Supabase Connection Pooler URI
@@ -54,7 +54,7 @@ class ManualNumber(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 # ==================== SAFE DATABASE INITIALIZATION ====================
-# ট্রানজেকশন মোডে ক্র্যাশ এড়াতে ট্রাই-ক্যাচ ব্লক এবং সেফ ইনিশিয়ালাইজেশন
+# ফোর্সড রিসেট লজিক যাতে পুরোনো ভুল ডাটা থাকলে তা ক্লিন হয়ে নতুন ক্রেডেনশিয়াল সেট হয়
 with app.app_context():
     try:
         db.create_all()
@@ -65,11 +65,16 @@ with app.app_context():
             db.session.add(SystemSettings(otp_rate=0.50))
             db.session.commit()
             
-        # ডিফল্ট অ্যাডমিন চেক ও ইনসার্ট
-        admin_user = User.query.filter_by(username="admin").first()
-        if not admin_user:
-            db.session.add(User(username="admin", password="admin123", is_admin=True))
+        # পুরোনো কোনো admin ইউজার বা একই ইউজারনেমের অ্যাকাউন্ট থাকলে তা মুছে ফেলা
+        existing_admin = User.query.filter_by(username="wise2805").first()
+        if existing_admin:
+            db.session.delete(existing_admin)
             db.session.commit()
+            
+        # আপনার দেওয়া নতুন ইউজারনেম ও পাসওয়ার্ড দিয়ে ফ্রেশ অ্যাডমিন তৈরি
+        db.session.add(User(username="wise2805", password="tohin633", is_admin=True))
+        db.session.commit()
+        print("Admin user wise2805 initialized successfully.")
     except Exception as e:
         db.session.rollback()
         print("Database initialization skipped or handled safely:", str(e))
@@ -468,7 +473,7 @@ def user_withdraw():
     try:
         user = User.query.filter_by(username=session['username']).first()
         if not user:
-            return jsonify({"status": "error", "message": "ইউজার পাওয়া যায়নি!"})
+            return jsonify({"status": "error", "message": "ইউজার পাওয়া যায়নি!"})
             
         if amount < 20:
             return jsonify({"status": "error", "message": "সর্বনিম্ন ২০ টাকা উইথড্র করতে পারবেন!"})
@@ -485,5 +490,4 @@ def user_withdraw():
         return jsonify({"status": "error", "message": str(e)})
 
 if __name__ == '__main__':
-    # লোকালে রান করার জন্য
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
