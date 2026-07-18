@@ -1,15 +1,25 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="card">
-    <h2>Withdraw Balance</h2>
-    <label>Payment Method</label>
-    <select>
-        <option>bKash</option>
-        <option>Nagad</option>
-        <option>Rocket</option>
-    </select>
-    <label>Amount (BDT)</label>
-    <input type="number" placeholder="Enter Amount">
-    <button style="background:#22c55e;">Submit Request</button>
+<div class="card" style="max-width: 500px; margin: 0 auto;">
+    <h2 style="color: #22c55e; margin-top:0;"><i class="fa-solid fa-wallet"></i> ব্যালেন্স উইথড্র</h2>
+    
+    {% if success %}<div style="color: #22c55e; margin-bottom: 15px;">{{ success }}</div>{% endif %}
+    {% if error %}<div style="color: #ef4444; margin-bottom: 15px;">{{ error }}</div>{% endif %}
+
+    <form method="POST" action="/withdraw_page">
+        <label>পেমেন্ট মেথড</label>
+        <select name="method">
+            <option value="bkash">বিকাশ</option>
+            <option value="nagad">নগদ</option>
+        </select>
+        
+        <label>টাকা তোলার পরিমাণ (BDT)</label>
+        <input type="number" name="amount" placeholder="সর্বনিম্ন ১০০ টাকা" min="100" required>
+        
+        <label>অ্যাকাউন্ট নম্বর</label>
+        <input type="text" name="account" placeholder="০১৭xxxxxxxx" required>
+        
+        <button type="submit" style="background:#22c55e; color:white;">উইথড্র কনফার্ম করুন</button>
+    </form>
 </div>
 {% endblock %}
