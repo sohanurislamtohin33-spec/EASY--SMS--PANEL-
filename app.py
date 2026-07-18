@@ -10,8 +10,8 @@ app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "zerotrust_secret_key_1000_users")
 
 # Render ও Supabase/PostgreSQL-এর জন্য কানেকশন পুল অপ্টিমাইজেশন
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("DATABASE_URL")
-app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql+psycopg2://postgres.thpumuorrqfbqwyjxkkw:A1%40rtbc0066@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres?sslmode=require'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     'pool_size': 25,          # একসাথে ২৫টি স্থায়ী কানেকশন খোলা থাকবে
     'max_overflow': 15,       # পিক আওয়ারে আরও ১৫টি কানেকশন ওভারফ্লো নিতে পারবে
     'pool_recycle': 280,      # কানেকশন ড্রপ হওয়া আটকাতে রি-সাইকেল টাইম
