@@ -1,183 +1,32 @@
-{% include 'base.html' %}
-
-{% block title %}Dashboard - Easy sms panel {% endblock %}
-
-<!-- FontAwesome CDN আইকনের জন্য -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<!-- Chart.js CDN গ্রাফের জন্য -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-<style>
-    body { background-color: #0b0f19; color: #f8fafc; font-family: sans-serif; }
-    .dashboard-container { max-width: 1000px; margin: 20px auto; padding: 15px; box-sizing: border-box; }
-    
-    .section-title { font-size: 16px; font-weight: bold; color: #38bdf8; display: flex; align-items: center; gap: 8px; margin-top: 25px; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 0.5px; }
-    
-    /* ২ কলামের গ্রিড লেআউট (স্ক্রিনশটের মতো) */
-    .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-    
-    /* কার্ড ডিজাইন */
-    .stat-card { background-color: #111827; border: 1px solid #1f2937; border-radius: 12px; padding: 16px; display: flex; align-items: center; gap: 15px; position: relative; }
-    
-    /* উইথড্র বর্ডারের জন্য কাস্টম হাইলাইট */
-    .border-highlight { border-left: 3px solid #38bdf8; }
-    
-    /* আইকন বক্স */
-    .icon-box { width: 48px; height: 48px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
-    
-    /* আইকন ব্যাকগ্রাউন্ড কালার থিম */
-    .bg-wallet { background-color: rgba(16, 185, 129, 0.1); color: #10b981; }
-    .bg-rate { background-color: rgba(245, 158, 11, 0.1); color: #f59e0b; }
-    .bg-sms { background-color: rgba(59, 130, 246, 0.1); color: #3b82f6; }
-    .bg-sms-yesterday { background-color: rgba(139, 92, 246, 0.1); color: #8b5cf6; }
-    .bg-numbers { background-color: rgba(6, 182, 212, 0.1); color: #06b6d4; }
-    .bg-success-box { background-color: rgba(34, 197, 94, 0.1); color: #22c55e; }
-    .bg-tower { background-color: rgba(239, 68, 68, 0.1); color: #ef4444; }
-    
-    /* টেক্সট এরিয়া */
-    .stat-info { display: flex; flex-direction: column; text-align: left; }
-    .stat-label { font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
-    .stat-value { font-size: 22px; font-weight: bold; color: #ffffff; font-family: monospace; }
-    
-    /* চার্ট বক্স */
-    .chart-card { background-color: #111827; border: 1px solid #1f2937; border-radius: 12px; padding: 20px; margin-top: 25px; }
-    .chart-container { position: relative; height: 220px; width: 100%; }
-</style>
-
-<div class="dashboard-container">
-
-    <!-- Section 1: Wallet & OTP Report -->
-    <div class="section-title">
-        <i class="fa-solid fa-wallet"></i> Wallet & OTP Report
-    </div>
-    <div class="stats-grid">
-        <div class="stat-card">
-            <div class="icon-box bg-wallet"><i class="fa-solid fa-sack-dollar"></i></div>
-            <div class="stat-info">
-                <span class="stat-label">Wallet Balance</span>
-                <span class="stat-value">৳ {{ "%.2f"|format(user_data.balance|default(0.00)) }}</span>
-            </div>
-        </div>
-        <div class="stat-card">
-            <div class="icon-box bg-rate"><i class="fa-solid fa-hand-holding-dollar"></i></div>
-            <div class="stat-info">
-                <span class="stat-label">Your OTP Rate</span>
-                <span class="stat-value">৳ {{ "%.2f"|format(otp_rate|default(0.50)) }}</span>
-            </div>
-        </div>
-        <div class="stat-card">
-            <div class="icon-box bg-sms"><i class="fa-solid fa-envelope-open-text"></i></div>
-            <div class="stat-info">
-                <span class="stat-label">Today's Total OTP</span>
-                <span class="stat-value">{{ user_data.today_otps|default(0) }}</span>
-            </div>
-        </div>
-        <div class="stat-card border-highlight">
-            <div class="icon-box bg-sms-yesterday"><i class="fa-solid fa-envelope-circle-check"></i></div>
-            <div class="stat-info">
-                <span class="stat-label">Yesterday's Total OTP</span>
-                <span class="stat-value">{{ user_data.yesterday_otps|default(0) }}</span>
-            </div>
-        </div>
-    </div>
-
-    <!-- Section 2: Virtual Numbers Analytics -->
-    <div class="section-title">
-        <i class="fa-solid fa-mobile-screen-button"></i> Virtual Numbers Analytics
-    </div>
-    <div class="stats-grid">
-        <div class="stat-card">
-            <div class="icon-box bg-numbers"><i class="fa-solid fa-sim-card"></i></div>
-            <div class="stat-info">
-                <span class="stat-label">Today's Total Numbers</span>
-                <span class="stat-value">{{ user_data.today_numbers|default(0) }}</span>
-            </div>
-        </div>
-        <div class="stat-card">
-            <div class="icon-box bg-success-box"><i class="fa-solid fa-circle-check"></i></div>
-            <div class="stat-info">
-                <span class="stat-label">Today's Success</span>
-                <span class="stat-value">{{ user_data.today_success|default(0) }}</span>
-            </div>
-        </div>
-        <div class="stat-card">
-            <div class="icon-box bg-tower"><i class="fa-solid fa-tower-cell"></i></div>
-            <div class="stat-info">
-                <span class="stat-label">Yesterday's Total Numbers</span>
-                <span class="stat-value">{{ user_data.yesterday_numbers|default(0) }}</span>
-            </div>
-        </div>
-        <div class="stat-card">
-            <div class="icon-box bg-success-box"><i class="fa-solid fa-box-archive"></i></div>
-            <div class="stat-info">
-                <span class="stat-label">Yesterday's Success</span>
-                <span class="stat-value">{{ user_data.yesterday_success|default(0) }}</span>
-            </div>
-        </div>
-    </div>
-
-    <!-- Section 3: OTP Trend Chart -->
-    <div class="chart-card">
-        <div class="section-title" style="margin-top: 0; margin-bottom: 20px;">
-            <i class="fa-solid fa-chart-line"></i> OTP Trend (Last 7 Days)
-        </div>
-        <div class="chart-container">
-            <canvas id="otpTrendChart"></canvas>
-        </div>
-    </div>
-
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+    <h2>স্বাগতম, {{ session.get('username') }}!</h2>
+    <p>আপনার অ্যাকাউন্ট ড্যাশবোর্ড সফলভাবে সক্রিয় রয়েছে।</p>
 </div>
-
-<script>
-    // স্ক্রিনশটের মতো ডার্ক থিম লাইন চার্ট জেনারেট করার স্ক্রিপ্ট
-    document.addEventListener("DOMContentLoaded", function () {
-        const ctx = document.getElementById('otpTrendChart').getContext('2d');
-        
-        // ব্যাকএন্ড থেকে আসা লাস্ট ৭ দিনের লেবেল ও ডাটা (ফলব্যাক হিসেবে ০ সেট করা)
-        const labels = {{ chart_labels|tojson|default(["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]) }};
-        const dataValues = {{ chart_data|tojson|default([0, 0, 0, 0, 0, 0, 0]) }};
-
-        new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'OTPs',
-                    data: dataValues,
-                    borderColor: '#38bdf8',
-                    backgroundColor: 'rgba(56, 189, 248, 0.1)',
-                    borderWidth: 2,
-                    pointBackgroundColor: '#38bdf8',
-                    pointBorderColor: '#111827',
-                    pointBorderWidth: 2,
-                    pointRadius: 4,
-                    tension: 0.3,
-                    fill: true
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false }
-                },
-                scales: {
-                    x: {
-                        grid: { display: false },
-                        ticks: { color: '#64748b', font: { size: 11 } }
-                    },
-                    y: {
-                        grid: { color: '#1f2937' },
-                        ticks: { 
-                            color: '#64748b', 
-                            font: { size: 11 },
-                            stepSize: 1,
-                            precision: 0
-                        },
-                        min: 0
-                    }
-                }
-            }
-        });
-    });
-</script>
+<div class="card">
+    <h3 style="color:#38bdf8;">সাম্প্রতিক ওটিপি হিস্ট্রি</h3>
+    <table style="width:100%; border-collapse:collapse;">
+        <thead>
+            <tr style="text-align:left; border-bottom:1px solid #1e293b;">
+                <th style="padding:10px;">সার্ভিস</th>
+                <th style="padding:10px;">নম্বর</th>
+                <th style="padding:10px;">স্ট্যাটাস</th>
+                <th style="padding:10px;">ওটিপি কোড</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in history %}
+            <tr style="border-bottom:1px solid #1e293b;">
+                <td style="padding:10px;">{{ item.service }}</td>
+                <td style="padding:10px;">{{ item.number }}</td>
+                <td style="padding:10px; color:#eab308;">{{ item.status }}</td>
+                <td style="padding:10px; color:#22c55e;">{{ item.otp if item.otp else 'Waiting...' }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="4" style="padding:20px; text-align:center; color:#64748b;">কোনো ডেটা নেই</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
