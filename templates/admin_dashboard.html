@@ -1,0 +1,185 @@
+{% include 'base.html' %}
+
+{% block title %}Admin Dashboard - EASY SMS PANEL{% endblock %}
+
+<style>
+    .admin-container { max-width: 1000px; margin: 30px auto; padding: 10px; }
+    .grid-box { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px; }
+    @media (max-width: 768px) { .grid-box { grid-template-columns: 1fr; } }
+    
+    .admin-card { background-color: #0f111a; border: 1px solid #1e293b; border-radius: 12px; padding: 20px; box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
+    .admin-card h3 { font-size: 18px; color: #f8fafc; margin-top: 0; margin-bottom: 15px; border-bottom: 1px solid #1e293b; padding-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+    
+    /* ফর্ম উপাদান */
+    .form-group { margin-bottom: 15px; text-align: left; }
+    .form-group label { display: block; font-size: 13px; color: #94a3b8; margin-bottom: 5px; }
+    .admin-input { width: 100%; padding: 10px 12px; background-color: #161925; border: 1px solid #2e3748; border-radius: 6px; color: #fff; font-size: 14px; box-sizing: border-box; outline: none; }
+    .admin-input:focus { border-color: #3b82f6; }
+    .admin-select { width: 100%; padding: 10px 12px; background-color: #161925; border: 1px solid #2e3748; border-radius: 6px; color: #fff; font-size: 14px; }
+    
+    .btn-admin { background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white; border: none; padding: 10px 15px; border-radius: 6px; font-size: 14px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 5px; }
+    .btn-admin:hover { opacity: 0.9; }
+    .btn-danger { background: linear-gradient(135deg, #ef4444, #b91c1c); }
+    .btn-success { background: linear-gradient(135deg, #22c55e, #15803d); width: auto; padding: 6px 12px; font-size: 12px; }
+
+    /* টেবিল স্টাইল */
+    .table-responsive { overflow-x: auto; }
+    .admin-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; }
+    .admin-table th, .admin-table td { padding: 12px; border-bottom: 1px solid #1e293b; }
+    .admin-table th { background-color: #161925; color: #94a3b8; font-weight: 600; }
+    .admin-table td { color: #cbd5e1; }
+    
+    .badge-status { padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; }
+    .badge-pending { background-color: #854d0e; color: #fef08a; }
+    .badge-approved { background-color: #14532d; color: #bbf7d0; }
+    
+    .rate-display { color: #eab308; font-weight: bold; font-family: monospace; }
+</style>
+
+<div class="admin-container">
+    
+    <!-- টপ রিয়েল-টাইম কন্ট্রোল গ্রিড -->
+    <div class="grid-box">
+        <!-- ওটিপি রেট কন্ট্রোল -->
+        <div class="admin-card">
+            <h3>OTP Rate Settings ⚙️ <span class="rate-display">৳{{ "%.2f"|format(settings.otp_rate) }} / OTP</span></h3>
+            <form action="/admin/update_rate" method="POST">
+                <div class="form-group">
+                    <label>প্রতি ওটিপিতে ইউজার কত টাকা পাবে (টাকা):</label>
+                    <input type="number" step="0.01" name="otp_rate" class="admin-input" value="{{ settings.otp_rate }}" required>
+                </div>
+                <button type="submit" class="btn-admin">আপডেট রেট</button>
+            </form>
+        </div>
+
+        <!-- নতুন ইউজার তৈরি -->
+        <div class="admin-card">
+            <h3>Add New User 👤</h3>
+            <form action="/admin/add_user" method="POST">
+                <div class="grid-box" style="grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 0;">
+                    <div class="form-group">
+                        <label>ইউজারনেম:</label>
+                        <input type="text" name="username" class="admin-input" placeholder="username" required>
+                    </div>
+                    <div class="form-group">
+                        <label>পাসওয়ার্ড:</label>
+                        <input type="text" name="password" class="admin-input" placeholder="password" required>
+                    </div>
+                </div>
+                <button type="submit" class="btn-admin">ইউজার তৈরি করুন</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ম্যানুয়াল ব্যালেন্স পরিবর্তন বক্স -->
+    <div class="admin-card" style="margin-bottom: 25px;">
+        <h3>Modify User Balance 💰</h3>
+        <form action="/admin/modify_balance" method="POST">
+            <div class="grid-box" style="grid-template-columns: 2fr 2fr 1fr; gap: 15px; margin-bottom: 0; align-items: flex-end;">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>ইউজার সিলেক্ট করুন:</label>
+                    <select name="user_id" class="admin-select" required>
+                        <option value="">-- ইউজার সিলেক্ট করুন --</option>
+                        {% for user in users %}
+                            {% if not user.is_admin %}
+                                <option value="{{ user.id }}">{{ user.username }} (বর্তমান: ৳{{ "%.2f"|format(user.balance) }})</option>
+                            {% endif %}
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>টাকার পরিমাণ (যোগ করতে প্লাস, কাটতে মাইনাস লিখুন):</label>
+                    <input type="number" step="0.01" name="amount" class="admin-input" placeholder="যেমন: 500 অথবা -200" required>
+                </div>
+                <div>
+                    <button type="submit" class="btn-admin" style="margin-top: 0; padding: 11px;">ব্যালেন্স আপডেট</button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- ইউজার লিস্ট টেবিল -->
+    <div class="admin-card" style="margin-bottom: 25px;">
+        <h3>All Registered Users 👥</h3>
+        <div class="table-responsive">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Username</th>
+                        <th>Password</th>
+                        <th>Balance</th>
+                        <th>Total OTPs</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                    <tr>
+                        <td>{{ user.id }}</td>
+                        <td>{{ user.username }} {% if user.is_admin %}<span style="color:#eab308; font-size:11px;">[Admin]</span>{% endif %}</td>
+                        <td><code>{{ user.password }}</code></td>
+                        <td style="color: #38bdf8; font-weight: bold;">৳{{ "%.2f"|format(user.balance) }}</td>
+                        <td>{{ user.total_otps }}</td>
+                        <td>
+                            {% if not user.is_admin %}
+                                <a href="/admin/delete_user/{{ user.id }}" class="btn-admin btn-danger" style="padding: 5px 10px; font-size: 12px; text-decoration: none;" onclick="return confirm('আপনি কি নিশ্চিতভাবে এই ইউজারকে ডিলিট করতে চান?')">Delete</a>
+                            {% else %}
+                                <span style="color: #64748b; font-size: 12px;">No Action</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- বিকাশ উইথড্র রিকোয়েস্ট টেবিল -->
+    <div class="admin-card">
+        <h3>bKash Withdraw Requests 💸</h3>
+        <div class="table-responsive">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Username</th>
+                        <th>bKash Number</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for req in withdraws %}
+                    <tr>
+                        <td>{{ req.date.strftime('%Y-%m-%d %H:%M') }}</td>
+                        <td>{{ req.username }}</td>
+                        <td style="font-family: monospace; font-weight: bold; color: #f472b6;">{{ req.bkash_number }}</td>
+                        <td style="color: #22c55e; font-weight: bold;">৳{{ "%.2f"|format(req.amount) }}</td>
+                        <td>
+                            {% if req.status == 'Pending' %}
+                                <span class="badge-status badge-pending">Pending</span>
+                            {% else %}
+                                <span class="badge-status badge-approved">Approved ✅</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if req.status == 'Pending' %}
+                                <a href="/admin/approve_withdraw/{{ req.id }}" class="btn-admin btn-success" style="text-decoration: none;">Approve Payment</a>
+                            {% else %}
+                                <span style="color: #64748b; font-size: 12px;">Paid</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" style="text-align: center; color: #64748b; padding: 20px;">কোনো উইথড্র রিকোয়েস্ট পাওয়া যায়নি।</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
