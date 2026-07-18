@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}EASY SMS PANEL{% endblock %}</title>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #08090c; color: #cbd5e1; margin: 0; padding: 0; }
+        .navbar { background-color: #0f111a; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; position: relative; }
+        .brand { font-size: 18px; font-weight: bold; color: #38bdf8; }
+        
+        /* ব্যালেন্স বক্স স্টাইল */
+        .nav-right-box { display: flex; align-items: center; gap: 15px; }
+        .user-balance-badge { background: linear-gradient(135deg, #1e293b, #0f172a); border: 1px solid #3b82f6; color: #38bdf8; padding: 6px 14px; border-radius: 20px; font-size: 14px; font-weight: bold; font-family: monospace; }
+        
+        /* থ্রি ডট মেনু স্টাইল */
+        .three-dots { font-size: 24px; cursor: pointer; color: #cbd5e1; padding: 5px 10px; user-select: none; }
+        .dropdown-menu { display: none; position: absolute; top: 55px; right: 20px; background-color: #131622; border: 1px solid #1e293b; border-radius: 8px; width: 160px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); z-index: 1000; }
+        .dropdown-menu a { display: block; padding: 12px 15px; color: #cbd5e1; text-decoration: none; font-size: 14px; border-bottom: 1px solid #1e293b; }
+        .dropdown-menu a:last-child { border-bottom: none; }
+        .dropdown-menu a:hover { background-color: #1e293b; color: #38bdf8; }
+        .show { display: block; }
+        
+        /* কন্টেন্ট এরিয়া */
+        .main-container { padding: 20px; }
+    </style>
+</head>
+<body>
+
+    <div class="navbar">
+        <div class="brand">EASY SMS PANEL</div>
+        
+        <div class="nav-right-box">
+            <!-- ইউজার লগইন থাকলে তার লাইভ ব্যালেন্স দেখাবে -->
+            {% if session.get('logged_in') %}
+                <div class="user-balance-badge" id="navUserBalance">৳{{ "%.2f"|format(global_balance) }}</div>
+            {% endif %}
+            <div class="three-dots" onclick="toggleMenu()">⋮</div>
+        </div>
+
+        <div class="dropdown-menu" id="navDropdown">
+            {% if session.get('logged_in') %}
+                <a href="/">Dashboard</a>
+                <a href="/get_number_page">Get Number</a>
+                <a href="/console_page">Live Console</a>
+                <a href="/withdraw_page" style="color: #22c55e;">Withdraw 💸</a>
+                
+                <!-- শুধুমাত্র অ্যাডমিন হলে এই অপশনটি মেনুতে দৃশ্যমান হবে -->
+                {% if session.get('is_admin') %}
+                    <a href="/admin/panel" style="color: #eab308; font-weight: bold;">Admin Panel ⚙️</a>
+                {% endif %}
+                
+                <a href="/logout" style="color: #ff4757;">Logout</a>
+            {% else %}
+                <a href="/login">Login</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="main-container">
+        {% block content %}
+        {% endblock %}
+    </div>
+
+    <script>
+        function toggleMenu() {
+            document.getElementById("navDropdown").classList.toggle("show");
+        }
+        window.onclick = function(event) {
+            if (!event.target.matches('.three-dots')) {
+                var dropdowns = document.getElementsByClassName("dropdown-menu");
+                for (var i = 0; i < dropdowns.length; i++) {
+                    var openDropdown = dropdowns[i];
+                    if (openDropdown.classList.contains('show')) {
+                        openDropdown.classList.remove('show');
+                    }
+                }
+            }
+        }
+    </script>
+</body>
+</html>
