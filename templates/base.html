@@ -7,15 +7,20 @@
     <style>
         body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #08090c; color: #cbd5e1; margin: 0; padding: 0; }
         .navbar { background-color: #0f111a; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; position: relative; }
+        
+        /* বাম পাশের কন্টেইনার (মেনু + ব্র্যান্ড) */
+        .nav-left-box { display: flex; align-items: center; gap: 12px; }
         .brand { font-size: 18px; font-weight: bold; color: #38bdf8; }
+        
+        /* হ্যামবার্গার মেনু আইকন স্টাইল */
+        .menu-hamburger { font-size: 24px; cursor: pointer; color: #cbd5e1; padding: 5px; user-select: none; line-height: 1; }
         
         /* ব্যালেন্স বক্স স্টাইল */
         .nav-right-box { display: flex; align-items: center; gap: 15px; }
         .user-balance-badge { background: linear-gradient(135deg, #1e293b, #0f172a); border: 1px solid #3b82f6; color: #38bdf8; padding: 6px 14px; border-radius: 20px; font-size: 14px; font-weight: bold; font-family: monospace; }
         
-        /* থ্রি ডট মেনু স্টাইল */
-        .three-dots { font-size: 24px; cursor: pointer; color: #cbd5e1; padding: 5px 10px; user-select: none; }
-        .dropdown-menu { display: none; position: absolute; top: 55px; right: 20px; background-color: #131622; border: 1px solid #1e293b; border-radius: 8px; width: 160px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); z-index: 1000; }
+        /* ড্রপডাউন মেনু এখন বাম পাশে পজিশন করা */
+        .dropdown-menu { display: none; position: absolute; top: 55px; left: 20px; background-color: #131622; border: 1px solid #1e293b; border-radius: 8px; width: 160px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); z-index: 1000; }
         .dropdown-menu a { display: block; padding: 12px 15px; color: #cbd5e1; text-decoration: none; font-size: 14px; border-bottom: 1px solid #1e293b; }
         .dropdown-menu a:last-child { border-bottom: none; }
         .dropdown-menu a:hover { background-color: #1e293b; color: #38bdf8; }
@@ -28,16 +33,21 @@
 <body>
 
     <div class="navbar">
-        <div class="brand">EASY SMS PANEL</div>
+        <!-- বাম পাশে মেনু বার এবং ব্র্যান্ড নাম -->
+        <div class="nav-left-box">
+            <div class="menu-hamburger" onclick="toggleMenu(event)">☰</div>
+            <div class="brand">EASY SMS PANEL</div>
+        </div>
         
+        <!-- ডান পাশে ব্যালেন্সের অংশ -->
         <div class="nav-right-box">
             <!-- ইউজার লগইন থাকলে তার লাইভ ব্যালেন্স দেখাবে -->
             {% if session.get('logged_in') %}
                 <div class="user-balance-badge" id="navUserBalance">৳{{ "%.2f"|format(global_balance) }}</div>
             {% endif %}
-            <div class="three-dots" onclick="toggleMenu()">⋮</div>
         </div>
 
+        <!-- ড্রপডাউন মেনু (বাম পাশের নিচে পজিশন করা) -->
         <div class="dropdown-menu" id="navDropdown">
             {% if session.get('logged_in') %}
                 <a href="/">Dashboard</a>
@@ -63,11 +73,15 @@
     </div>
 
     <script>
-        function toggleMenu() {
+        function toggleMenu(event) {
+            // মেনু বাটনে ক্লিক করলে ড্রপডাউন টগল হবে এবং বুদবুদ হওয়া আটকাবে
+            event.stopPropagation();
             document.getElementById("navDropdown").classList.toggle("show");
         }
+        
+        // স্ক্রিনের অন্য কোথাও ক্লিক করলে মেনু বন্ধ হয়ে যাবে
         window.onclick = function(event) {
-            if (!event.target.matches('.three-dots')) {
+            if (!event.target.matches('.menu-hamburger')) {
                 var dropdowns = document.getElementsByClassName("dropdown-menu");
                 for (var i = 0; i < dropdowns.length; i++) {
                     var openDropdown = dropdowns[i];
