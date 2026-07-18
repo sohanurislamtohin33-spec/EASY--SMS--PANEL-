@@ -1,0 +1,329 @@
+{% include 'base.html' %}
+
+<style>
+    .container { max-width: 550px; margin: 30px auto; padding: 10px; }
+    .card-box { background-color: #0f111a; border: 1px solid #1e293b; border-radius: 12px; padding: 25px; box-shadow: 0 8px 24px rgba(0,0,0,0.4); text-align: center; }
+    h2 { font-size: 20px; color: #f8fafc; margin-bottom: 20px; }
+    
+    /* ইনপুট বক্স ও বাটন */
+    .input-field { width: 100%; padding: 14px; background-color: #161925; border: 1px solid #2e3748; border-radius: 30px; color: #fff; font-size: 16px; font-family: monospace; text-align: center; box-sizing: border-box; outline: none; transition: border 0.3s; }
+    .input-field:focus { border-color: #3b82f6; }
+    .btn-submit { background: linear-gradient(135deg, #4f46e5, #3b82f6); color: white; border: none; padding: 14px; width: 100%; border-radius: 30px; font-size: 16px; font-weight: bold; margin-top: 15px; cursor: pointer; transition: opacity 0.2s; }
+    .btn-submit:hover { opacity: 0.9; }
+    
+    /* হিস্ট্রি সেকশন */
+    .history-title { text-align: left; margin-top: 30px; font-size: 16px; color: #94a3b8; font-weight: bold; border-bottom: 1px solid #1e293b; padding-bottom: 8px; }
+    .history-container { margin-top: 15px; display: flex; flex-direction: column; gap: 20px; }
+    
+    /* নাম্বারের কার্ড স্লট */
+    .number-card { background-color: #161925; border: 1px solid #1e293b; border-radius: 10px; padding: 15px; text-align: left; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+    
+    /* নাম্বার ক্লিক বক্স */
+    .number-display { background-color: #0f111a; padding: 12px; border-radius: 8px; font-size: 18px; font-weight: bold; color: #38bdf8; display: flex; justify-content: space-between; align-items: center; border: 1px solid #1e293b; cursor: pointer; }
+    .number-display:hover { background-color: #1e293b; }
+    .btn-copy-tag { background-color: #1e293b; color: #94a3b8; border: none; padding: 4px 8px; border-radius: 4px; font-size: 11px; }
+    
+    /* ওটিপি বক্স ও স্ট্যাটাস */
+    .otp-status-box { background-color: #0b0c13; border: 1px solid #1e293b; border-radius: 8px; padding: 12px; margin-top: 10px; font-size: 14px; }
+    .otp-header { display: flex; justify-content: space-between; align-items: center; }
+    .status-badge { font-weight: bold; color: #eab308; } 
+    .status-badge.received { color: #22c55e; } 
+    
+    /* ক্লিকেবল ওটিপি বক্স */
+    .clean-otp-display { display: none; background: #14532d; border-radius: 6px; padding: 10px; text-align: center; margin-top: 8px; cursor: pointer; border: 1px dashed #4ade80; }
+    .clean-otp-text { font-size: 22px; font-weight: bold; letter-spacing: 3px; color: #ffffff; font-family: monospace; }
+    .clean-otp-hint { font-size: 10px; color: #bbf7d0; margin-top: 2px; }
+    
+    .full-sms { font-size: 13px; color: #cbd5e1; margin-top: 6px; font-family: monospace; line-height: 1.4; word-break: break-all; }
+    .timer-text { font-size: 11px; color: #f87171; text-align: right; margin-top: 4px; }
+</style>
+
+<div class="container">
+    <div class="card-box">
+        <h2>RANGE (MANUAL)</h2>
+        <input type="text" id="rangeId" class="input-field" placeholder="যেমন: 22896XXX">
+        <button class="btn-submit" onclick="requestNewNumber()">Get Number</button>
+        
+        <div class="history-title" id="histHeader" style="display:none;">ACTIVATED NUMBERS HISTORY</div>
+        <div class="history-container" id="historyContainer"></div>
+    </div>
+</div>
+
+<script>
+    let activeOrders = [];
+
+    document.addEventListener("DOMContentLoaded", () => {
+        loadOrdersFromStorage();
+    });
+
+    function loadOrdersFromStorage() {
+        const stored = localStorage.getItem("mino_sms_orders");
+        if (stored) {
+            activeOrders = JSON.parse(stored);
+            if(activeOrders.length > 0) {
+                document.getElementById("histHeader").style.display = "block";
+                for(let i = activeOrders.length - 1; i >= 0; i--) {
+                    createNewNumberCard(activeOrders[i]);
+                    startTracking(activeOrders[i]);
+                }
+            }
+        }
+    }
+
+    function saveOrdersToStorage() {
+        localStorage.setItem("mino_sms_orders", JSON.stringify(activeOrders));
+    }
+
+    function requestNewNumber() {
+        const rid = document.getElementById("rangeId").value;
+        if(!rid) return alert("দয়া করে একটি রেঞ্জ আইডি দিন");
+
+        fetch('/api/buy_number', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ rid: rid })
+        })
+        .then(res => res.json())
+        .then(resData => {
+            if(resData.status === "success" && resData.number) {
+                let rawNum = String(resData.number).trim();
+                if(!rawNum.startsWith('+')) {
+                    rawNum = '+' + rawNum;
+                }
+                
+                const orderId = "ord_" + Date.now();
+                
+                const newOrder = {
+                    id: orderId,
+                    phoneNumber: rawNum,
+                    timeLeft: 900, 
+                    extractedOtpCode: "",
+                    fullSmsText: "",
+                    isExpired: false,
+                    isReceived: false
+                };
+                
+                activeOrders.unshift(newOrder);
+                saveOrdersToStorage();
+                
+                document.getElementById("histHeader").style.display = "block";
+                createNewNumberCard(newOrder);
+                startTracking(newOrder);
+
+                // 🚀 ট্রিক: নাম্বার পাওয়ার সাথে সাথেই ক্লিপবোর্ডে অটো-কপি লজিক ফায়ার হবে
+                autoCopyNumber(rawNum);
+
+            } else {
+                alert("নাম্বার পাওয়া যায়নি: " + (resData.message || "ত্রুটি"));
+            }
+        });
+    }
+
+    // নতুন নাম্বারের জন্য ডেডিকেটেড ব্যাকগ্রাউন্ড অটো-কপি ফাংশন
+    function autoCopyNumber(numberText) {
+        navigator.clipboard.writeText(numberText).then(() => {
+            showToastMessage("নাম্বার");
+        }).catch(err => {
+            console.error("Auto copy failed, fallback initialized", err);
+            // ওল্ড ব্রাউজার ব্যাকআপ সাপোর্ট
+            let textArea = document.createElement("textarea");
+            textArea.value = numberText;
+            document.body.appendChild(textArea);
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                showToastMessage("নাম্বার");
+            } catch (fallbackErr) {
+                console.error("Fallback auto-copy failed", fallbackErr);
+            }
+            document.body.removeChild(textArea);
+        });
+    }
+
+    // ১ সেকেন্ডের সুন্দর নোটিফিকেশন মেসেজ (Toast) প্রোভাইডার
+    function showToastMessage(type) {
+        let toast = document.createElement("div");
+        toast.innerText = type + " কপি হয়েছে! ✅";
+        toast.style.position = "fixed";
+        toast.style.bottom = "40px";
+        toast.style.left = "50%";
+        toast.style.transform = "translateX(-50%)";
+        toast.style.backgroundColor = "#22c55e"; 
+        toast.style.color = "#ffffff";
+        toast.style.padding = "12px 24px";
+        toast.style.borderRadius = "30px";
+        toast.style.fontSize = "14px";
+        toast.style.fontWeight = "bold";
+        toast.style.zIndex = "99999";
+        toast.style.boxShadow = "0px 6px 15px rgba(0,0,0,0.4)";
+        toast.style.transition = "opacity 0.3s ease";
+        
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.style.opacity = "0";
+            setTimeout(() => {
+                toast.remove();
+            }, 300);
+        }, 1000);
+    }
+
+    function createNewNumberCard(order) {
+        const container = document.getElementById("historyContainer");
+        
+        const showCleanBox = order.isReceived && order.extractedOtpCode ? "block" : "none";
+        const badgeText = order.isReceived ? "RECEIVED" : (order.isExpired ? "Expired" : "Waiting for OTP...");
+        const badgeClass = order.isReceived ? "status-badge received" : "status-badge";
+        
+        let timerLabel = "";
+        if (order.isReceived) {
+            timerLabel = "";
+        } else if (order.isExpired || order.timeLeft <= 0) {
+            timerLabel = "Time left: 00:00";
+        } else {
+            let m = Math.floor(order.timeLeft / 60);
+            let s = Math.floor(order.timeLeft % 60);
+            m = m < 10 ? "0" + m : m;
+            s = s < 10 ? "0" + s : s;
+            timerLabel = `Time left: ${m}:${s}`;
+        }
+
+        const cardHtml = `
+            <div class="number-card" id="card_${order.id}">
+                <div class="number-display" onclick="copyTextToClipboard('${order.phoneNumber}', 'নাম্বার')" title="কপি করতে ক্লিক করুন">
+                    <span>${order.phoneNumber}</span>
+                    <span class="btn-copy-tag">Copy 📋</span>
+                </div>
+                
+                <div class="otp-status-box">
+                    <div class="otp-header">
+                        <div>
+                            <span style="color:#94a3b8; margin-right:5px;">Status:</span>
+                            <span class="${badgeClass}" id="status_${order.id}">${badgeText}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="clean-otp-display" id="cleanbox_${order.id}" style="display: ${showCleanBox};" onclick="copyTextToClipboard(document.getElementById('otpVal_${order.id}').innerText, 'ওটিপি')">
+                        <div class="clean-otp-text" id="otpVal_${order.id}">${order.extractedOtpCode || '------'}</div>
+                        <div class="clean-otp-hint">ক্লিক করলেই ওটিপি কপি হয়ে যাবে ⚡</div>
+                    </div>
+                    
+                    <div class="full-sms" id="sms_${order.id}">${order.fullSmsText || ''}</div>
+                    <div class="timer-text" id="timer_${order.id}">${timerLabel}</div>
+                </div>
+            </div>
+        `;
+        
+        container.insertAdjacentHTML('afterbegin', cardHtml);
+    }
+
+    function startTracking(order) {
+        if(order.isExpired || order.isReceived || order.timeLeft <= 0) return;
+
+        const otpInterval = setInterval(() => {
+            if(order.isExpired || order.isReceived || order.timeLeft <= 0) {
+                clearInterval(otpInterval);
+                return;
+            }
+            
+            fetch('/api/check_otp', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ number: order.phoneNumber })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.status === "success" && data.data && data.data.length > 0) {
+                    const latest = data.data[0];
+                    const textMessage = latest.message || latest.sms || latest.text;
+                    
+                    if(textMessage) {
+                        order.isReceived = true;
+                        order.fullSmsText = textMessage;
+                        
+                        const badge = document.getElementById(`status_${order.id}`);
+                        if(badge) {
+                            badge.innerText = "RECEIVED";
+                            badge.classList.add("received");
+                        }
+                        
+                        const smsEl = document.getElementById(`sms_${order.id}`);
+                        if(smsEl) smsEl.innerText = textMessage;
+                        
+                        const spaceCodeMatch = textMessage.match(/\d{2,4}\s\d{2,4}/);
+                        const normalCodeMatch = textMessage.match(/\b\d{4,8}\b/);
+                        
+                        let finalOtp = "";
+                        if(spaceCodeMatch) {
+                            finalOtp = spaceCodeMatch[0].replace(/\s+/g, ''); 
+                        } else if(normalCodeMatch) {
+                            finalOtp = normalCodeMatch[0];
+                        }
+                        
+                        if(finalOtp) {
+                            order.extractedOtpCode = finalOtp;
+                            const valEl = document.getElementById(`otpVal_${order.id}`);
+                            if(valEl) valEl.innerText = finalOtp;
+                            const boxEl = document.getElementById(`cleanbox_${order.id}`);
+                            if(boxEl) boxEl.style.display = "block";
+                        }
+                        
+                        saveOrdersToStorage();
+                        clearInterval(otpInterval);
+                    }
+                }
+            })
+            .catch(err => console.error("Error checking OTP:", err));
+        },  2000);
+
+        const timerInterval = setInterval(() => {
+            if(order.isReceived) {
+                clearInterval(timerInterval);
+                return;
+            }
+
+            order.timeLeft--;
+            
+            if(order.timeLeft % 10 === 0) {
+                saveOrdersToStorage();
+            }
+            
+            let mins = Math.floor(order.timeLeft / 60);
+            let secs = Math.floor(order.timeLeft % 60);
+            
+            mins = mins < 10 ? "0" + mins : mins;
+            secs = secs < 10 ? "0" + secs : secs;
+            
+            const timerEl = document.getElementById(`timer_${order.id}`);
+            if(timerEl) {
+                timerEl.innerText = "Time left: " + mins + ":" + secs;
+            }
+            
+            if(order.timeLeft <= 0) {
+                clearInterval(timerInterval);
+                clearInterval(otpInterval);
+                
+                if(!order.isReceived) {
+                    order.isExpired = true;
+                    order.timeLeft = 0;
+                    saveOrdersToStorage();
+                    
+                    if(timerEl) timerEl.innerText = "Time left: 00:00";
+                    const badge = document.getElementById(`status_${order.id}`);
+                    if(badge) badge.innerText = "Expired";
+                }
+            }
+        }, 1000);
+    }
+
+    // ম্যানুয়াল ক্লিকের মাধ্যমে কপি করার সাধারণ ফাংশন
+    function copyTextToClipboard(text, type) {
+        if(!text || text.includes('---')) return;
+        
+        navigator.clipboard.writeText(text).then(() => {
+            showToastMessage(type);
+        }).catch(err => {
+            console.error("Copy failed", err);
+        });
+    }
+</script>
