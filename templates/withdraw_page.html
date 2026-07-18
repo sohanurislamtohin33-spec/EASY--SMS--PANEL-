@@ -1,0 +1,75 @@
+{% include 'base.html' %}
+
+{% block title %}Withdraw Balance - EASY SMS PANEL{% endblock %}
+
+{% block content %}
+<style>
+    .withdraw-container { max-width: 500px; margin: 40px auto; padding: 10px; }
+    .withdraw-card { background-color: #0f111a; border: 1px solid #1e293b; border-radius: 12px; padding: 25px; box-shadow: 0 8px 24px rgba(0,0,0,0.4); text-align: center; }
+    h2 { font-size: 20px; color: #f8fafc; margin-bottom: 20px; }
+    
+    .balance-box { background: linear-gradient(135deg, #1e293b, #0f172a); border: 1px solid #22c55e; padding: 15px; border-radius: 8px; margin-bottom: 25px; }
+    .balance-title { font-size: 13px; color: #94a3b8; margin-bottom: 5px; }
+    .balance-amount { font-size: 26px; font-weight: bold; color: #22c55e; font-family: monospace; }
+    
+    .form-group { margin-bottom: 15px; text-align: left; }
+    .form-group label { display: block; font-size: 13px; color: #94a3b8; margin-bottom: 5px; }
+    .input-field { width: 100%; padding: 12px; background-color: #161925; border: 1px solid #2e3748; border-radius: 8px; color: #fff; font-size: 15px; font-family: monospace; box-sizing: border-box; outline: none; }
+    .input-field:focus { border-color: #22c55e; }
+    
+    .btn-withdraw { background: linear-gradient(135deg, #22c55e, #15803d); color: white; border: none; padding: 14px; width: 100%; border-radius: 30px; font-size: 16px; font-weight: bold; margin-top: 10px; cursor: pointer; }
+    .btn-withdraw:hover { opacity: 0.9; }
+    .note { font-size: 12px; color: #64748b; margin-top: 15px; }
+</style>
+
+<div class="withdraw-container">
+    <div class="withdraw-card">
+        <h2>Withdraw Earnings 💸</h2>
+        
+        <div class="balance-box">
+            <div class="balance-title">আপনার বর্তমান ব্যালেন্স</div>
+            <div class="balance-amount">৳{{ "%.2f"|format(balance) }}</div>
+        </div>
+
+        <div class="form-group">
+            <label>বিকাশ পার্সোনাল নম্বর:</label>
+            <input type="text" id="bkashNum" class="input-field" placeholder="017XXXXXXXX">
+        </div>
+        
+        <div class="form-group">
+            <label>উইথড্র অ্যামাউন্ট (৳):</label>
+            <input type="number" id="withdrawAmount" class="input-field" placeholder="সর্বনিম্ন ২০ টাকা">
+        </div>
+
+        <button class="btn-withdraw" onclick="submitWithdraw()">Send Request</button>
+        
+        <div class="note">⚠️ রিকোয়েস্ট পাঠানোর পর অ্যাডমিন প্যানেল থেকে ভেরিফাই করে আপনার বিকাশ নাম্বারে টাকা পাঠিয়ে দেওয়া হবে।</div>
+    </div>
+</div>
+
+<script>
+    function submitWithdraw() {
+        // JavaScript-এ .strip() এর বদলে .trim() ব্যবহার করা হয়েছে
+        const bkashNum = document.getElementById('bkashNum').value.trim();
+        const amount = document.getElementById('withdrawAmount').value;
+
+        if(!bkashNum || !amount) {
+            return alert("দয়া করে সবকটি ঘর পূরণ করুন!");
+        }
+
+        fetch('/api/withdraw', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ bkash_number: bkashNum, amount: amount })
+        })
+        .then(res => res.json())
+        .then(data => {
+            alert(data.message);
+            if(data.status === "success") {
+                location.reload();
+            }
+        })
+        .catch(err => console.error("Error:", err));
+    }
+</script>
+{% endblock %}
