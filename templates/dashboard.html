@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block title %}User Dashboard{% endblock %}
+{% block content %}
+<div class="card" style="background: linear-gradient(135deg, #2563eb, #1d4ed8); text-align: center;">
+    <h2 style="margin:0; font-size:16px; opacity:0.9;">💰 Total Balance</h2>
+    <h1 style="margin:10px 0 0 0; font-size:36px;">{{ balance }} ৳</h1>
+</div>
+
+<div class="card">
+    <h3>🔑 Developer API Token</h3>
+    <p style="font-size:13px; color:#94a3b8; margin:0 0 10px 0;">Use this token for third-party scripts or applications.</p>
+    <div style="background:#0f172a; padding:12px; border-radius:6px; font-family:monospace; font-size:13px; border:1px dashed #475569; word-break:break-all; color:#fbbf24;">
+        {{ api_key }}
+    </div>
+</div>
+{% endblock %}
