@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block title %}Get Number{% endblock %}
+{% block content %}
+<div class="card">
+    <h3>🎯 Get Dynamic OTP Number</h3>
+    <label for="operator" style="font-size:14px; color:#94a3b8;">Select Operator Range:</label>
+    <select id="operator">
+        <option value="017">Grameenphone (017)</option>
+        <option value="019">Banglalink (019)</option>
+        <option value="018">Robi (018)</option>
+        <option value="016">Airtel (016)</option>
+    </select>
+    <button onclick="buyNumber()">Get Number</button>
+</div>
+
+<script>
+async function buyNumber() {
+    const op = document.getElementById('operator').value;
+    const res = await fetch('/api/v1/buy_number', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ api_key: "{{ api_key }}", range: op })
+    });
+    const data = await res.json();
+    if(data.status === 'success') {
+        localStorage.setItem('active_num', data.number);
+        window.location.href = '/console';
+    } else {
+        alert(data.message || "Failed to get number.");
+    }
+}
+</script>
+{% endblock %}
