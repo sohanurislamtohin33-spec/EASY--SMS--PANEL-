@@ -1,18 +1,26 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="card">
-    <h2>Buy OTP Number</h2>
-    <label>Select Server</label>
-    <select>
-        <option>Server 1 (Fast Response)</option>
-        <option>Server 2 (High Success)</option>
-    </select>
-    <label>Select Service</label>
-    <select>
-        <option>Telegram (৳১০.০০)</option>
-        <option>WhatsApp (৳১৫.০০)</option>
-        <option>Google (৳৫.০০)</option>
-    </select>
-    <button>Get Number</button>
+    <h2 style="color: #38bdf8; margin-top: 0;"><i class="fa-solid fa-mobile-screen"></i> ওটিপি নম্বর কিনুন</h2>
+    
+    {% if success %}<div style="color: #22c55e; margin-bottom: 15px;">{{ success }}</div>{% endif %}
+    {% if error %}<div style="color: #ef4444; margin-bottom: 15px;">{{ error }}</div>{% endif %}
+
+    <form method="POST" action="/get_number_page">
+        <label>সার্ভার সিলেক্ট করুন</label>
+        <select name="server">
+            <option value="server1">Premium Server 1</option>
+            <option value="server2">VIP Server 2</option>
+        </select>
+        
+        <label>সার্ভিস সিলেক্ট করুন</label>
+        <select name="service">
+            <option value="telegram">Telegram (৳১০.০০)</option>
+            <option value="whatsapp">WhatsApp (৳১৫.০০)</option>
+            <option value="bkash">bKash (৳১২.০০)</option>
+        </select>
+        
+        <button type="submit">Get Number Button</button>
+    </form>
 </div>
 {% endblock %}
