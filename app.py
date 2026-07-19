@@ -4,7 +4,7 @@ import threading
 from flask import Flask, jsonify, request, render_template, session, redirect, url_for
 
 app = Flask(__name__)
-app.secret_key = 'super-secret-key-for-easy-sms-panel' # সেশন সচল রাখার জন্য সিক্রেট কি
+app.secret_key = 'super-secret-key-for-easy-sms-panel' # সেশন সিকিউরিটির জন্য কি
 
 # --- ডাটাবেজ কনফিগারেশন (Supabase) ---
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql+psycopg2://postgres.satwojizxqoivvprimxy:easy-sms-panel.onrender.com@aws-0-ap-southeast-2.pooler.supabase.com:5432/postgres?sslmode=require'
@@ -20,7 +20,6 @@ class UploadedNumber(db.Model):
     number = db.Column(db.String(20), nullable=False)
     status = db.Column(db.String(20), default='available') # available, sold
 
-# সেফটি ব্যাকআপ মডেল (যদি আপনার ড্যাশবোর্ডের জিনজা টেমপ্লেট User অবজেক্ট খোজে)
 class User(db.Model):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
@@ -119,7 +118,7 @@ fetch_thread.start()
 
 @app.route('/')
 def home():
-    """ড্যাশবোর্ড রাউট: জিলিয়ান টেমপ্লেটের 'user_data' আনডিফাইনড এরর ফিক্স করা হয়েছে"""
+    """ড্যাশবোর্ড রাউট: chart_labels ও user_data সংক্রান্ত এরর হ্যান্ডেল করা হয়েছে"""
     user_id = session.get('user_id')
     user_data = None
     
@@ -129,14 +128,17 @@ def home():
         except Exception:
             pass
 
-    # ডাটাবেজে ইউজার রেকর্ড না থাকলে বা সেশন না থাকলে ক্র্যাশ ঠেকাতে ফলব্যাক ডামি ডেটা
+    # সেশন বা ডাটাবেজ রেকর্ড না থাকলে ডামি ডেটা দিয়ে ক্র্যাশ প্রতিরোধ
     if not user_data:
         user_data = {
             "username": "Guest User",
             "balance": 0.00
         }
         
-    return render_template('dashboard.html', user_data=user_data)
+    # ড্যাশবোর্ডের গ্রাফের জন্য ডিফল্ট লেবেল পাঠানো হচ্ছে যাতে tojson এনকোডার ক্র্যাশ না করে
+    default_labels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+        
+    return render_template('dashboard.html', user_data=user_data, chart_labels=default_labels)
 
 @app.route('/console')
 def console_page():
