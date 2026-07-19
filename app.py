@@ -1,26 +1,33 @@
 import time
 import requests
 import threading
-from flask import Flask, jsonify, request, render_template
+from flask import Flask, jsonify, request, render_template, session, redirect, url_for
 
 app = Flask(__name__)
+app.secret_key = 'super-secret-key-for-easy-sms-panel' # সেশন সচল রাখার জন্য সিক্রেট কি
 
 # --- ডাটাবেজ কনফিগারেশন (Supabase) ---
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql+psycopg2://postgres.satwojizxqoivvprimxy:easy-sms-panel.onrender.com@aws-0-ap-southeast-2.pooler.supabase.com:5432/postgres?sslmode=require'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# SQLAlchemy ইনিশিয়ালাইজেশন (যদি আপনার প্রজেক্টে Models আলাদা ফাইল না হয়)
 from flask_sqlalchemy import SQLAlchemy
 db = SQLAlchemy(app)
 
-# ডাটাবেজ মডেল (আপলোডেড নাম্বারের জন্য সাধারণ স্ট্রাকচার)
+# --- ডাটাবেজ মডেলসমূহ ---
 class UploadedNumber(db.Model):
     __tablename__ = 'uploaded_numbers'
     id = db.Column(db.Integer, primary_key=True)
     number = db.Column(db.String(20), nullable=False)
     status = db.Column(db.String(20), default='available') # available, sold
 
-# --- গ্লোবাল মেমোরি ক্যাশ (৫ মিনিটের ওটিপি এবং কনসোল ডেটা ধরে রাখার জন্য) ---
+# সেফটি ব্যাকআপ মডেল (যদি আপনার ড্যাশবোর্ডের জিনজা টেমপ্লেট User অবজেক্ট খোজে)
+class User(db.Model):
+    __tablename__ = 'users'
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(50), unique=True, nullable=False)
+    balance = db.Column(db.Float, default=0.00)
+
+# --- গ্লোবাল মেমোরি ক্যাশ (৫ মিনিটের ওটিপি লাইভ পুল) ---
 LIVE_OTP_POOL = []
 POOL_LOCK = threading.Lock()
 
@@ -44,7 +51,6 @@ PROVIDERS = [
 ]
 
 def parse_otp_data(provider_type, raw_json):
-    """ভিন্ন ভিন্ন প্যানেল আর্কিটেকচার থেকে ওটিপি ফিল্টার করার হেল্পার"""
     extracted = []
     current_ts = time.time()
     try:
@@ -74,7 +80,6 @@ def parse_otp_data(provider_type, raw_json):
     return extracted
 
 def bg_otp_fetcher():
-    """প্রতি ৫ সেকেন্ড পর পর ৩টি প্যানেল থেকে ওটিপি ফেচ করার ব্যাকগ্রাউন্ড থ্রেড"""
     global LIVE_OTP_POOL
     while True:
         new_otps = []
@@ -89,15 +94,13 @@ def bg_otp_fetcher():
                 if response.status_code == 200:
                     parsed = parse_otp_data(provider['type'], response.json())
                     new_otps.extend(parsed)
-            except Exception as e:
+            except Exception:
                 pass
         
         with POOL_LOCK:
-            # ৫ মিনিট আগের ডাটা ডিলিট করার কাট-অফ টাইমআউট (৫ মিনিট = ৩০০ সেকেন্ড)
             cutoff_time = time.time() - 300
             updated_pool = [otp for otp in LIVE_OTP_POOL if otp['timestamp'] > cutoff_time]
             
-            # মেমোরিতে ইউনিক ওটিপি ইনসার্ট করা
             existing_msgs = {o['message'] for o in updated_pool}
             for o in new_otps:
                 if o['message'] and o['message'] not in existing_msgs:
@@ -113,16 +116,34 @@ fetch_thread = threading.Thread(target=bg_otp_fetcher, daemon=True)
 fetch_thread.start()
 
 # --- রাউটস ও এপিআই এন্ডপয়েন্টসমূহ ---
+
 @app.route('/')
 def home():
-    return render_template('dashboard.html')
+    """ড্যাশবোর্ড রাউট: জিলিয়ান টেমপ্লেটের 'user_data' আনডিফাইনড এরর ফিক্স করা হয়েছে"""
+    user_id = session.get('user_id')
+    user_data = None
+    
+    if user_id:
+        try:
+            user_data = User.query.get(user_id)
+        except Exception:
+            pass
+
+    # ডাটাবেজে ইউজার রেকর্ড না থাকলে বা সেশন না থাকলে ক্র্যাশ ঠেকাতে ফলব্যাক ডামি ডেটা
+    if not user_data:
+        user_data = {
+            "username": "Guest User",
+            "balance": 0.00
+        }
+        
+    return render_template('dashboard.html', user_data=user_data)
+
 @app.route('/console')
 def console_page():
     return render_template('console.html')
 
 @app.route('/api/console_stream', methods=['GET'])
 def console_stream():
-    """কনসোল পেজের জন্য ৫ মিনিটের লাইভ ওটিপি ক্যাশ ডেটা রিডার"""
     with POOL_LOCK:
         return jsonify({
             "status": "success",
@@ -131,14 +152,13 @@ def console_stream():
 
 @app.route('/api/buy_number', methods=['POST'])
 def buy_number():
-    """কন্ডিশনাল রেঞ্জ লজিক অনুযায়ী নাম্বার কেনার এপিআই"""
     req_data = request.get_json() or {}
     range_code = str(req_data.get("rid", "")).strip()
 
     if not range_code:
         return jsonify({"status": "error", "message": "Range code is required"}), 400
 
-    # লজিক ১: ৫ বা তার বেশি ডিজিটের বড় রেঞ্জ (যেমন: 22467XXX) -> Mino Panel থেকে আনবে
+    # লজিক ১: ৫ বা তার বেশি ডিজিটের বড় রেঞ্জ (যেমন: 22467XXX) -> Mino Panel
     if len(range_code) >= 5:
         try:
             mino_url = "https://mino-sms-panel.xyz/api/get_number" 
@@ -156,32 +176,34 @@ def buy_number():
         except Exception as e:
             return jsonify({"status": "error", "message": f"Mino Panel error: {str(e)}"}), 500
 
-    # লজিক ২: ২, ৩ বা ৪ ডিজিটের ছোট রেঞ্জ (যেমন: 251) -> Supabase ডাটাবেজ থেকে আনবে
+    # লজিক ২: ২, ৩ বা ৪ ডিজিটের ছোট রেঞ্জ (যেমন: 251) -> Local Supabase DB
     elif len(range_code) in [2, 3, 4]:
-        number_record = UploadedNumber.query.filter(
-            UploadedNumber.status == 'available',
-            UploadedNumber.number.like(f"{range_code}%")
-        ).first()
+        try:
+            number_record = UploadedNumber.query.filter(
+                UploadedNumber.status == 'available',
+                UploadedNumber.number.like(f"{range_code}%")
+            ).first()
 
-        if number_record:
-            number_record.status = 'sold'
-            db.session.commit()
-            
-            return jsonify({
-                "status": "success",
-                "source": "local_database",
-                "number": number_record.number,
-                "order_id": f"DB-{number_record.id}"
-            })
-        else:
-            return jsonify({"status": "error", "message": "এই রেঞ্জের কোনো নাম্বার ডাটাবেজে খালি নেই!"}), 404
+            if number_record:
+                number_record.status = 'sold'
+                db.session.commit()
+                
+                return jsonify({
+                    "status": "success",
+                    "source": "local_database",
+                    "number": number_record.number,
+                    "order_id": f"DB-{number_record.id}"
+                })
+            else:
+                return jsonify({"status": "error", "message": "এই রেঞ্জের কোনো নাম্বার ডাটাবেজে খালি নেই!"}), 404
+        except Exception as e:
+            return jsonify({"status": "error", "message": f"Database Error: {str(e)}"}), 500
 
     else:
         return jsonify({"status": "error", "message": "অকার্যকর রেঞ্জ ফরম্যাট!"}), 400
 
 @app.route('/api/check_otp', methods=['POST'])
 def check_otp():
-    """নাম্বার চেক করার সময় প্যানেলে না খুঁজে সরাসরি লাইভ ওটিপি মেমোরি পুল থেকে ইনস্ট্যান্ট খুঁজবে"""
     req_data = request.get_json() or {}
     target_number = req_data.get("number")
     
@@ -204,5 +226,5 @@ def check_otp():
 
 if __name__ == '__main__':
     with app.app_context():
-        db.create_all() # ডাটাবেজে টেবিল না থাকলে অটোমেটিক তৈরি হবে
+        db.create_all()
     app.run(debug=True, port=5000)
