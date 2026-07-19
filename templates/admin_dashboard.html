@@ -32,8 +32,6 @@
     .badge-status { padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; }
     .badge-pending { background-color: #854d0e; color: #fef08a; }
     .badge-approved { background-color: #14532d; color: #bbf7d0; }
-    .badge-mino { background-color: #1e3a8a; color: #93c5fd; }
-    .badge-other { background-color: #581c87; color: #e9d5ff; }
     
     .rate-display { color: #eab308; font-weight: bold; font-family: monospace; }
 </style>
@@ -73,6 +71,39 @@
         </div>
     </div>
 
+    <!-- ফাইল দিয়ে নাম্বার আপলোড এবং রিমুভ করার গ্রিড -->
+    <div class="grid-box">
+        <!-- .TXT ফাইল আপলোড করে স্টক করার সিস্টেম -->
+        <div class="admin-card">
+            <h3>Upload Numbers File 📂 <span class="rate-display" style="font-size: 13px;">মোট লাইভ স্টক: {{ total_manual_stock }}</span></h3>
+            <form action="/admin/upload_number_file" method="POST" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label>কান্ট্রি কোড / রেঞ্জ সিলেক্ট করুন (যেমন: 225):</label>
+                    <input type="text" name="range" class="admin-input" placeholder="যেমন: 225" required>
+                </div>
+                <div class="form-group">
+                    <label>নাম্বারের .txt ফাইল আপলোড করুন:</label>
+                    <input type="file" name="file" class="admin-input" accept=".txt" required>
+                    <small style="color: #64748b; font-size: 11px; display: block; margin-top: 4px;">* ফাইলে প্রতি লাইনে একটি করে নাম্বার থাকতে হবে।</small>
+                </div>
+                <button type="submit" class="btn-admin" style="background: linear-gradient(135deg, #10b981, #047857);">ফাইল আপলোড করুন</button>
+            </form>
+        </div>
+
+        <!-- রেঞ্জ অনুযায়ী স্টক ডিলিট করার সিস্টেম -->
+        <div class="admin-card">
+            <h3>Remove Numbers Stock 🗑️</h3>
+            <form action="/admin/delete_numbers_by_range" method="POST" onsubmit="return confirm('আপনি কি নিশ্চিত যে এই রেঞ্জের অবিক্রিত সব নাম্বার ডিলিট করতে চান?');">
+                <div class="form-group">
+                    <label>যে রেঞ্জের নাম্বার ডিলিট করতে চান (যেমন: 225):</label>
+                    <input type="text" name="range" class="admin-input" placeholder="যেমন: 225" required>
+                    <small style="color: #ef4444; font-size: 11px; display: block; margin-top: 4px;">* এই রেঞ্জের যেসব নাম্বার এখনও অবিক্রিত আছে, সেগুলো ডাটাবেস থেকে মুছে যাবে।</small>
+                </div>
+                <button type="submit" class="btn-admin btn-danger">সব নাম্বার রিমুভ করুন</button>
+            </form>
+        </div>
+    </div>
+
     <!-- ম্যানুয়াল ব্যালেন্স পরিবর্তন বক্স -->
     <div class="admin-card" style="margin-bottom: 25px;">
         <h3>Modify User Balance 💰</h3>
@@ -98,134 +129,6 @@
                 </div>
             </div>
         </form>
-    </div>
-
-    <!-- ⚡ ডাইনামিক মাল্টি-প্যানেল কন্ট্রোল ও কনফিগারেশন বক্স -->
-    <div class="grid-box" style="margin-bottom: 25px;">
-        <!-- প্যানেল অ্যাড/আপডেট ফর্ম -->
-        <div class="admin-card">
-            <h3>Add / Update Provider Panel 🔌</h3>
-            <form action="/admin/manage_panel" method="POST">
-                <input type="hidden" name="panel_id" id="panel_id" value="">
-                
-                <div class="grid-box" style="grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
-                    <div class="form-group" style="margin-bottom: 0;">
-                        <label>প্যানেলের নাম:</label>
-                        <input type="text" name="name" id="panel_name" class="admin-input" placeholder="যেমন: Mino Panel 1" required>
-                    </div>
-                    <div class="form-group" style="margin-bottom: 0;">
-                        <label>প্যানেল টাইপ:</label>
-                        <select name="panel_type" id="panel_type" class="admin-select" required>
-                            <option value="mino">Mino (API Based)</option>
-                            <option value="other">Other (Database Upload)</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label>এপিআই ইউআরএল (Mino টাইপের জন্য):</label>
-                    <input type="url" name="api_url" id="panel_url" class="admin-input" placeholder="https://api.example.com">
-                </div>
-
-                <div class="form-group">
-                    <label>API Token / Key:</label>
-                    <input type="text" name="api_token" id="panel_token" class="admin-input" placeholder="আপনার প্যানেল সিক্রেট টোকেন">
-                </div>
-
-                <div class="form-group">
-                    <label>শর্ট রেঞ্জ কোড (২-৪ ডিজিট / নাম্বার ম্যাচিং):</label>
-                    <input type="text" name="number_range" id="panel_range" class="admin-input" placeholder="যেমন: 23274 বা 2556" required>
-                </div>
-
-                <button type="submit" class="btn-admin" id="panel_submit_btn">প্যানেল সেভ করুন</button>
-                <button type="button" class="btn-admin btn-danger" id="cancel_edit_btn" style="display:none; margin-top: 5px;" onclick="resetPanelForm()">রিসেট ফর্ম</button>
-            </form>
-        </div>
-
-        <!-- অন্যান্য প্যানেলের জন্য ফাইল আপলোড সিস্টেম -->
-        <div class="admin-card">
-            <h3>Upload Numbers for 'Other' Panels 📁</h3>
-            <form action="/admin/upload_numbers" method="POST" enctype="multipart/form-data">
-                <div class="form-group">
-                    <label>টার্গেট প্যানেল সিলেক্ট করুন:</label>
-                    <select name="panel_id" class="admin-select" required>
-                        <option value="">-- প্যানেল নির্বাচন করুন --</option>
-                        {% for panel in panels %}
-                            {% if panel.panel_type == 'other' %}
-                                <option value="{{ panel.id }}">{{ panel.name }} (Range: {{ panel.number_range }})</option>
-                            {% endif %}
-                        {% endfor %}
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label>.txt ফাইল সিলেক্ট করুন (প্রতি লাইনে একটি করে নাম্বার):</label>
-                    <input type="file" name="number_file" class="admin-input" accept=".txt" required>
-                </div>
-
-                <button type="submit" class="btn-admin" style="background: linear-gradient(135deg, #a855f7, #7e22ce);">নাম্বার ফাইল আপলোড করুন</button>
-            </form>
-            
-            <div style="margin-top: 15px; font-size: 12px; color: #64748b; line-height: 1.5;">
-                ℹ️ <strong>টিপস:</strong> 'Other' টাইপ প্যানেলে নাম্বার বিক্রি করার জন্য এখানে টেক্সট ফাইল আপলোড করতে হবে। ইউজার যখন কোনো রেঞ্জ রিকোয়েস্ট করবে, তখন ডাটাবেজে এই আপলোড করা নাম্বারগুলো থেকে ২-৪ ডিজিট ম্যাচ করে অটোমেটিক প্রোভাইড করা হবে।
-            </div>
-        </div>
-    </div>
-
-    <!-- প্যানেল সমূহের তালিকা টেবিল -->
-    <div class="admin-card" style="margin-bottom: 25px;">
-        <h3>Active System Panels (Max 10) 🔌</h3>
-        <div class="table-responsive">
-            <table class="admin-table">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Panel Name</th>
-                        <th>Type</th>
-                        <th>Range</th>
-                        <th>API URL / Token</th>
-                        <th>Status</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for panel in panels %}
-                    <tr>
-                        <td>{{ panel.id }}</td>
-                        <td><strong>{{ panel.name }}</strong></td>
-                        <td>
-                            {% if panel.panel_type == 'mino' %}
-                                <span class="badge-status badge-mino">Mino API</span>
-                            {% else %}
-                                <span class="badge-status badge-other">DB Upload</span>
-                            {% endif %}
-                        </td>
-                        <td style="font-family: monospace; color: #eab308; font-weight: bold;">{{ panel.number_range }}</td>
-                        <td style="font-size: 12px; max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                            {% if panel.api_url %}{{ panel.api_url }}{% else %}<span style="color:#64748b;">N/A</span>{% endif %}
-                        </td>
-                        <td>
-                            {% if panel.is_active %}
-                                <span style="color: #22c55e;">● Active</span>
-                            {% else %}
-                                <span style="color: #ef4444;">● Inactive</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            <button type="button" class="btn-admin btn-success" style="margin-top:0;" 
-                                    onclick="editPanel('{{ panel.id }}', '{{ panel.name }}', '{{ panel.panel_type }}', '{{ panel.api_url or '' }}', '{{ panel.api_token or '' }}', '{{ panel.number_range }}')">
-                                Edit
-                            </button>
-                        </td>
-                    </tr>
-                    {% else %}
-                    <tr>
-                        <td colspan="7" style="text-align: center; color: #64748b; padding: 20px;">কোনো প্রোভাইডার প্যানেল কনফিগার করা হয়নি।</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
     </div>
 
     <!-- ইউজার লিস্ট টেবিল -->
@@ -313,30 +216,3 @@
     </div>
 
 </div>
-
-<!-- JavaScript হ্যান্ডলার ফর প্যানেল এডিটিং -->
-<script>
-    function editPanel(id, name, type, url, token, range) {
-        document.getElementById('panel_id').value = id;
-        document.getElementById('panel_name').value = name;
-        document.getElementById('panel_type').value = type;
-        document.getElementById('panel_url').value = url;
-        document.getElementById('panel_token').value = token;
-        document.getElementById('panel_range').value = range;
-        
-        document.getElementById('panel_submit_btn').innerText = "প্যানেল আপডেট করুন";
-        document.getElementById('cancel_edit_btn').style.display = "inline-block";
-    }
-
-    function resetPanelForm() {
-        document.getElementById('panel_id').value = "";
-        document.getElementById('panel_name').value = "";
-        document.getElementById('panel_type').value = "mino";
-        document.getElementById('panel_url').value = "";
-        document.getElementById('panel_token').value = "";
-        document.getElementById('panel_range').value = "";
-        
-        document.getElementById('panel_submit_btn').innerText = "প্যানেল সেভ করুন";
-        document.getElementById('cancel_edit_btn').style.display = "none";
-    }
-</script>
