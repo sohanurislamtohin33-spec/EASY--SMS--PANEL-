@@ -115,7 +115,7 @@ fetch_thread.start()
 # --- রাউটস ও এপিআই এন্ডপয়েন্টসমূহ ---
 @app.route('/')
 def home():
-    return render_template('dashboard.html) # অথবা আপনার মেইন ইনডেক্স/হোম পেজের নাম (যেমন: index.html)
+    return render_template('dashboard.html')
 @app.route('/console')
 def console_page():
     return render_template('console.html')
