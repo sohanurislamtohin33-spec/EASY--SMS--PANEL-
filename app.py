@@ -13,9 +13,8 @@ app = Flask(__name__)
 app.secret_key = "mino_sms_panel_secure_static_key_2026"
 
 # 🗄️ Supabase Connection Pooler (Session Mode)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql+psycopg2://postgres.thpumuorrqfbqwyjxkkw:A1%40rtbc0066@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres?sslmode=require'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql+psycopg2://postgres.satwojizxqoivvprimxy:easy-sms-panel.onrender.com@aws-0-ap-southeast-2.pooler.supabase.com:5432/postgres?sslmode=require'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
 # 🛠️ সার্ভারলেস কানেকশন অপটিমাইজেশন
 app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
     "pool_pre_ping": True,
